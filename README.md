@@ -2,6 +2,13 @@
 
 An offline, native **Godot 4.6.3** relic-matching game for Windows and Android. The tiles, their artifacts, collection tray, architecture, crystals, plants and mechanisms are real 3D geometry. Interface text and buttons use Godot's UI system; gameplay does not use sprites or flat artwork.
 
+## Direct downloads
+
+- [Download the editable Godot project — ZIP](https://github.com/wwwadeesaushen7/puzzle_game/archive/refs/heads/main.zip)
+- [Download the editable Godot project — tar.gz](https://github.com/wwwadeesaushen7/puzzle_game/archive/refs/heads/main.tar.gz)
+
+Open the downloaded project in Godot 4.6.3. Windows and Android binaries have been built, but GitHub release downloads are not published yet.
+
 Open **`project.godot`** in Godot 4.6.3 and press **F5**, or run:
 
 ```sh
