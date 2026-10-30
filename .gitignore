@@ -1,0 +1,8 @@
+.godot/
+builds/*
+!builds/.gitkeep
+*.blend1
+*.tmp
+__pycache__/
+artifacts/
+.DS_Store

@@ -1,0 +1,456 @@
+[
+  {
+    "asset": "arch",
+    "triangles": 2820,
+    "meshes": 2,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "arch_low",
+    "triangles": 1182,
+    "meshes": 2,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "column",
+    "triangles": 7796,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "column_low",
+    "triangles": 3272,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "compartment",
+    "triangles": 4732,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "compartment_low",
+    "triangles": 2314,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "crystal_cluster",
+    "triangles": 238,
+    "meshes": 2,
+    "texture_sizes": []
+  },
+  {
+    "asset": "crystal_cluster_low",
+    "triangles": 238,
+    "meshes": 2,
+    "texture_sizes": []
+  },
+  {
+    "asset": "fern",
+    "triangles": 1800,
+    "meshes": 1,
+    "texture_sizes": []
+  },
+  {
+    "asset": "fern_low",
+    "triangles": 914,
+    "meshes": 1,
+    "texture_sizes": []
+  },
+  {
+    "asset": "frost_shell",
+    "triangles": 358,
+    "meshes": 1,
+    "texture_sizes": []
+  },
+  {
+    "asset": "frost_shell_low",
+    "triangles": 150,
+    "meshes": 1,
+    "texture_sizes": []
+  },
+  {
+    "asset": "plinth",
+    "triangles": 14772,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "plinth_low",
+    "triangles": 6202,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_00",
+    "triangles": 6958,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_00_low",
+    "triangles": 2918,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_01",
+    "triangles": 2466,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_01_low",
+    "triangles": 1052,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_02",
+    "triangles": 2628,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_02_low",
+    "triangles": 1100,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_03",
+    "triangles": 5296,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_03_low",
+    "triangles": 2222,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_04",
+    "triangles": 2760,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_04_low",
+    "triangles": 1276,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_05",
+    "triangles": 2422,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_05_low",
+    "triangles": 1130,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_06",
+    "triangles": 3808,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_06_low",
+    "triangles": 1596,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_07",
+    "triangles": 5604,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_07_low",
+    "triangles": 2352,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_08",
+    "triangles": 9928,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_08_low",
+    "triangles": 4166,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_09",
+    "triangles": 2118,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_09_low",
+    "triangles": 1018,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_10",
+    "triangles": 322,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_10_low",
+    "triangles": 322,
+    "meshes": 3,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_11",
+    "triangles": 4800,
+    "meshes": 2,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_11_low",
+    "triangles": 2014,
+    "meshes": 2,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "relic_seal",
+    "triangles": 16844,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "relic_seal_low",
+    "triangles": 7180,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "tile",
+    "triangles": 4700,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "tile_low",
+    "triangles": 2190,
+    "meshes": 4,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  },
+  {
+    "asset": "timber",
+    "triangles": 564,
+    "meshes": 2,
+    "texture_sizes": [
+      [
+        1024,
+        1024
+      ]
+    ]
+  },
+  {
+    "asset": "timber_low",
+    "triangles": 344,
+    "meshes": 2,
+    "texture_sizes": [
+      [
+        256,
+        256
+      ]
+    ]
+  }
+]
