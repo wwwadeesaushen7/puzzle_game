@@ -47,7 +47,7 @@ def archive(path,files,prefix=''):
     print(path.name,round(path.stat().st_size/1024/1024,1),'MiB; ZIP integrity verified')
 
 archive(builds/'AstralForge-Windows.zip',[(p,p.relative_to(windows)) for p in windows.rglob('*') if p.is_file()])
-excluded={'.git','.godot','builds','artifacts','__pycache__'}
+excluded={'.git','.godot','builds','artifacts','downloads','__pycache__'}
 source_files=[]
 for p in root.rglob('*'):
     rel=p.relative_to(root)

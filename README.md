@@ -1,21 +1,18 @@
 # ASTRAL FORGE
 
-An offline, native **Godot 4.6.3** relic-matching game for Windows and Android. The tiles, their artifacts, collection tray, architecture, crystals, plants and mechanisms are real 3D geometry. Interface text and buttons use Godot's UI system; gameplay does not use sprites or flat artwork.
+An offline 3D relic-matching puzzle game for Windows and Android. Discover ancient artifacts, match three alike, and explore five astral worlds.
 
-## Direct downloads
+## Download and play
 
-- [Download the editable Godot project — ZIP](https://github.com/wwwadeesaushen7/puzzle_game/archive/refs/heads/main.zip)
-- [Download the editable Godot project — tar.gz](https://github.com/wwwadeesaushen7/puzzle_game/archive/refs/heads/main.tar.gz)
+These are self-contained game downloads. **You do not need to install Godot or any development tools.**
 
-Open the downloaded project in Godot 4.6.3. Windows and Android binaries have been built, but GitHub release downloads are not published yet.
+| Platform | Direct download | Start playing |
+| --- | --- | --- |
+| Windows 10 / 11, 64-bit | [**Download the Windows game — ZIP**](https://github.com/wwwadeesaushen7/puzzle_game/raw/refs/heads/main/downloads/AstralForge-Windows.zip) | Extract the ZIP, then double-click **AstralForge.exe**. |
+| Android 7 or newer, arm64 | [**Download the Android game — APK**](https://github.com/wwwadeesaushen7/puzzle_game/raw/refs/heads/main/downloads/AstralForge-Android.apk) | Open the APK, install it, then open **Astral Forge**. If prompted, allow installation from the app used to open this APK. |
 
-Open **`project.godot`** in Godot 4.6.3 and press **F5**, or run:
+These are preview builds. The Android APK uses development signing. See the [testing notes](docs/VALIDATION.md) for device-testing limits. Optional [download checksums](downloads/SHA256SUMS.txt) are included.
 
-```sh
-godot --path . --rendering-method gl_compatibility
-```
-
-Use `--rendering-method forward_plus` for advanced desktop lighting. The default desktop renderer supports older OpenGL 3.3 laptops. Android uses the Mobile renderer, with Godot's OpenGL fallback enabled. Graphics presets scale meshes, textures, environmental detail, shadows, antialiasing and supported effects independently of the rendering backend.
 
 ## Play
 
@@ -46,9 +43,21 @@ Frozen relics thaw after one match. Matching Ancient Keys unlocks sealed relics.
 
 ## Source map
 
+The remaining sections are for developers who want to edit or rebuild the game. Players can use the downloads above.
+
 `scripts/core/board_state.gd` owns selection, coverage, matches, special rules, undo, mechanisms and hints. `level_catalog.gd` constructs layouts and stores a legal removal certificate. `progress.gd` handles persistence and rewards. `scripts/main.gd` coordinates the scene, input and animations. `scripts/view/` contains the world, tile and interface presentation. `tools/` holds reproducible asset generation and build scripts.
 
 No external art downloads are needed. The Blender generator and generated GLBs are included. See [asset rights](docs/ASSET_RIGHTS.md), [development and export](docs/DEVELOPMENT.md), and [validation and remaining QA](docs/VALIDATION.md).
+
+### Optional editor setup
+
+Developers can [download the source ZIP](https://github.com/wwwadeesaushen7/puzzle_game/archive/refs/heads/main.zip), open **`project.godot`** in Godot 4.6.3, and press **F5**, or run:
+
+```sh
+godot --path . --rendering-method gl_compatibility
+```
+
+Use `--rendering-method forward_plus` for advanced desktop lighting. The default desktop renderer supports OpenGL 3.3. Android uses the Mobile renderer with an OpenGL fallback. Quality settings scale meshes, textures, scene detail, shadows and supported effects.
 
 ## Verification
 

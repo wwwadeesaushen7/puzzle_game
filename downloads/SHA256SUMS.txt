@@ -1,0 +1,2 @@
+8644451839d7cf35c51dbc84f611892bba7bc5cb17d833a0307c8aa3eb3f0755  AstralForge-Windows.zip
+f62b625e1e93abe69d9b884e9996aaf08ef0342aa23b6e90f93c78d3ac643a0b  AstralForge-Android.apk

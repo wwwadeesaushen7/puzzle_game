@@ -17,6 +17,12 @@ Validation was performed in the managed Linux development environment on 30 Octo
 | Android package | A real development-signed arm64 APK was exported using the matching API 36 toolchain. `apksigner verify` passed APK signature schemes v2 and v3. ZIP integrity, native library and bundled notices were checked. Manifest reports package `org.astralforge.relicmatch`, min SDK 24, target SDK 36, with no requested Internet permission. |
 | Dependency integrity | Godot export-template archive verified against the official SHA-512 manifest. Android SDK archives verified against Google's repository metadata. TLS and artifact verification remained enabled. |
 
+## Standalone downloads
+
+`downloads/AstralForge-Windows.zip` contains the self-contained Windows executable and notices. `downloads/AstralForge-Android.apk` is the same verified Android application with stored assets ZIP-compressed, aligned again, and signed with the existing development key. Every application entry is checked byte-for-byte against the original APK. Godot's Android asset loader uses `AAsset_read`/`AAsset_seek`, which support compressed assets. APK signature schemes v2/v3 and alignment are verified again. This packaging change reduces the download size without removing application files; native device testing is still outstanding.
+
+Both files are hosted directly in the repository, and their SHA-256 checksums are in `downloads/SHA256SUMS.txt`. Reproduce them after a build with `python3 tools/prepare_downloads.py`.
+
 ## Platform and renderer limits
 
 The cloud display uses **software OpenGL rendering**. It has no Vulkan ICD and reports a missing `VK_KHR_surface` extension when Vulkan is requested. Godot then falls back to OpenGL and gameplay works. Consequently, Forward+ SSAO/SSR/SSIL, volumetric fog, glow and depth of field have guarded implementations but still need visual validation on a Vulkan-capable device. No GPU or phone performance measurements are claimed.
