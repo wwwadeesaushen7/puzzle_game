@@ -38,6 +38,28 @@ func run() -> void:
 		s.load_level(data)
 		replay(s,data.solution)
 		expect(data.tiles == LevelCatalog.daily(date).tiles,"Daily seed is deterministic")
+	# Difficulty must increase in depth and required tray planning, while all
+	# generated certificates remain legal for varied deterministic seeds.
+	var peaks: Array[int] = []
+	for n in [1,8,17,28]:
+		var puzzle := fresh(n)
+		var peak := 0
+		for id in puzzle.solution:
+			puzzle.select_tile(id)
+			peak = maxi(peak,puzzle.tray.size())
+		peaks.append(peak)
+	expect(peaks[0] < peaks[1] and peaks[1] < peaks[2] and peaks[3] >= peaks[2],"Later tiers require progressively more tray planning")
+	expect(LevelCatalog.generate(30).tiles.size() > LevelCatalog.generate(20).tiles.size(),"Final world adds another physical layer")
+	for n in [7,13,19,23,27,30]:
+		for seed_value in range(6):
+			var data := LevelCatalog.generate(n,seed_value*977+42)
+			var puzzle := BoardState.new()
+			puzzle.load_level(data)
+			replay(puzzle,data.solution)
+	var opening := fresh(1)
+	for i in range(3):
+		var result := opening.select_tile(opening.solution[i])
+		expect(result.matched.size() == (3 if i == 2 else 0),"Only completed triples emit match effects")
 	var state := fresh(30)
 	var original := state.snapshot()
 	var covered := -1

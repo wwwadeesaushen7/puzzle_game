@@ -9,8 +9,8 @@ static func generate(number: int, seed_override := -1) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 91027 + level * 7919 if seed_override < 0 else seed_override
 	var tiles: Array = []
-	# Real horizontal layers: 18 / 30 / 42 / 54 tiles, every count divisible by three.
-	var layers := 1 + int(level >= 3) + int(level >= 11) + int(level >= 23)
+	# More depth and competing matches as the expedition progresses.
+	var layers := 1 + int(level >= 3) + int(level >= 11) + int(level >= 19) + int(level >= 27)
 	for layer in range(layers):
 		var rows := 3 if layer == 0 else 2
 		for row in range(rows):
@@ -35,17 +35,32 @@ static func generate(number: int, seed_override := -1) -> Dictionary:
 		order.append(id)
 		tiles[id].state = "matched"
 	var type_count := mini(12, 3 + int(level / 3))
+	# Reserve the opening key triple for frost/seal/guardian tutorials. Subsequent
+	# waves interleave distinct kinds, requiring up to six held relics. The
+	# geometric certificate stays valid, including a match at the seventh slot.
+	var kinds: Array[int] = [2, 2, 2]
+	var wave := 1 if level <= 4 else (2 if level <= 12 else (3 if level <= 22 else 4))
+	var group := 1
+	while kinds.size() < order.size():
+		var count := mini(wave, (order.size() - kinds.size()) / 3)
+		var pattern: Array = []
+		match count:
+			1: pattern = [0,0,0]
+			2: pattern = [0,1,0,1,0,1]
+			3: pattern = [0,1,2,0,1,2,0,1,2]
+			4: pattern = [0,1,2,3,0,1,0,1,2,2,3,3]
+		for index in pattern: kinds.append((group + index + level) % type_count)
+		group += count
 	for i in range(order.size()):
 		var t: Dictionary = tiles[order[i]]
 		t.state = "board"
-		var group := int(i / 3)
-		t.kind = 2 if group == 0 else (group + level) % type_count
+		t.kind = kinds[i]
 		if i >= 3 and level >= 7 and i % 8 == 4: t.special = "frozen"
 		if i >= 6 and level >= 19 and i % 9 == 7: t.special = "locked"
 		if i >= 6 and level >= 25 and i % 7 == 3: t.special = "mystery"
 		if level >= 15 and i % 11 == 5: t.special = "golden"
 		if i >= 6 and level >= 23 and i % 13 == 8: t.secret_parent = order[0]
-	return {"number": level, "world": int((level - 1) / 6), "title": TITLES[level - 1], "tiles": tiles, "solution": order, "rotating": level >= 13, "moving": level >= 21, "seed": rng.seed}
+	return {"number": level, "world": int((level - 1) / 6), "title": TITLES[level - 1], "tiles": tiles, "solution": order, "rotating": level >= 13, "moving": level >= 21, "seed": rng.seed, "difficulty": wave, "layers": layers}
 
 static func daily(date_string: String) -> Dictionary:
 	var result := generate(30, int(date_string.replace("-", "")) + 431)

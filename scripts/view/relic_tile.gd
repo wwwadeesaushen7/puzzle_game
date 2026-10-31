@@ -8,6 +8,9 @@ var special_visual: Node3D
 var halo: MeshInstance3D
 var low := false
 var signature := ""
+var accent: MeshInstance3D
+var pulse_time := 0.0
+const ACCENTS := ["e9b76c","93dfea","e6cc75","b3bbd4","e0e7f1","ed9d72","a6c4a6","dcafed","88c7df","bdad91","81d6aa","b1a2e2"]
 static var cache: Dictionary = {}
 
 static func model(asset: String, reduced := false) -> Node3D:
@@ -44,6 +47,17 @@ func setup(id: int, reduced: bool) -> void:
 	halo.position.y = 0.30
 	halo.visible = false
 	add_child(halo)
+	accent = MeshInstance3D.new()
+	var rim := TorusMesh.new()
+	rim.inner_radius = 0.41
+	rim.outer_radius = 0.425
+	rim.rings = 32
+	rim.ring_segments = 4
+	accent.mesh = rim
+	accent.position.y = 0.29
+	accent.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(accent)
+	set_process(false)
 
 func update_appearance(tile: Dictionary, state: BoardState) -> void:
 	var hidden := not state.secret_open(tile)
@@ -64,6 +78,11 @@ func update_appearance(tile: Dictionary, state: BoardState) -> void:
 			opening.chain().tween_callback(old_shell.queue_free)
 		else: old_shell.queue_free()
 	kind = tile.kind
+	var ink := StandardMaterial3D.new()
+	ink.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ink.albedo_color = Color(ACCENTS[9 if mystery or hidden else kind])
+	accent.material_override = ink
+	accent.visible = not hidden
 	artifact = model("relic_%02d" % (9 if mystery or hidden else kind), low)
 	add_child(artifact)
 	artifact.visible = not hidden
@@ -94,3 +113,9 @@ func selectable(enabled: bool) -> void:
 
 func highlight(enabled: bool) -> void:
 	halo.visible = enabled
+	set_process(enabled)
+
+func _process(delta: float) -> void:
+	pulse_time += delta
+	halo.scale = Vector3.ONE * (1.0 + 0.06*sin(pulse_time*4.0))
+	halo.position.y = 0.31 + 0.03*sin(pulse_time*3.0)

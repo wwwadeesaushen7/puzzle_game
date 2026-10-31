@@ -1,48 +1,37 @@
-# Validation and remaining release work
+# Astral Forge 1.1.0 validation
 
-Validation was performed in the managed Linux development environment on 30 October 2026, using Godot 4.6.3 and Blender 4.3.2.
+Validated on 30 October 2026 in a fresh GitHub checkout under `/workspace/astral-forge`, using Godot 4.6.3, OpenJDK 21, Android build tools 36.0.0, and Mesa software OpenGL. The previous publishing draft was not used. A new managed cloud instance was not provisioned; the fresh checkout used the available cloud runtime.
 
-## Passed
+## Automated checks
 
-| Check | Evidence |
+| Check | Result and scope |
 | --- | --- |
-| Project import and headless startup | All game scripts and generated assets load. The reusable `tools/setup_cloud.sh` was exercised successfully. |
-| Puzzle rules | **3,081 assertions, zero failures.** All 30 standard expeditions and four deterministic daily seeds replay their complete solution certificates without abilities. Tests also cover blocked selections, exact undo restoration, SAT coverage, locks, frost, secrets, reweaving, tray overflow order and the eighth-slot limit. |
-| Progress and recovery | **9 checks, zero failures.** Rewards, unlocking, replay reward limits, star improvements, independent daily progress, coin limits, JSON persistence and corrupt-save recovery. |
-| Headless scene integration | **22 checks, zero failures.** Scene setup, camera, picking, animated collection, a complete animated expedition, all worlds, mechanisms, quality changes, abilities and portrait gestures. |
-| Rendered scene integration | **34 checks, zero failures**, on OpenGL/Mesa llvmpipe. Captured the main menu, board, collection, victory, five worlds, level selection, settings and portrait views. |
-| Input and fallback smoke tests | **9 checks passed in each of two runs.** Mouse events were routed through the viewport to the 3D picker. Requested Mobile/Forward+ backends fell back to Compatibility; these are fallback tests, not proof of Vulkan rendering. |
-| Original asset audit | **44 GLBs**: 22 designs with high/mobile LODs, valid positions/normals/UVs, actual triangle reductions and 1024px/256px image variants. High assets total 103,734 triangles; low assets total 45,152. These are sums across the asset library, not per-frame counts. Full report: `asset-audit.json`. |
-| Windows package | A real x64 PE executable was exported with an embedded Godot pack. Header and pack signatures were checked. The packed main scene was also loaded by the matching Linux Godot engine: 18 initial relics, the main menu and bundled license viewer passed. This does not substitute for launching the executable on Windows. |
-| Android package | A real development-signed arm64 APK was exported using the matching API 36 toolchain. `apksigner verify` passed APK signature schemes v2 and v3. ZIP integrity, native library and bundled notices were checked. Manifest reports package `org.astralforge.relicmatch`, min SDK 24, target SDK 36, with no requested Internet permission. |
-| Dependency integrity | Godot export-template archive verified against the official SHA-512 manifest. Android SDK archives verified against Google's repository metadata. TLS and artifact verification remained enabled. |
+| Puzzle rules | **7,178 assertions, zero failures.** Complete ability-free solutions for all 30 expeditions, four daily seeds and 36 additional seeded variants. Covers special rules, undo, mechanisms, capacity, seventh-slot matches, nonmutating hints, progressive tray pressure, and emitting effects only for completed triples. |
+| Save/progression | **9 checks, zero failures.** Rewards, unlocking, replay limits, daily rewards, coin limits, persistence and corrupt-save recovery. Existing version-1 saves remain compatible. |
+| Headless scene | **22 checks, zero failures.** Picking, animated selection, full expedition/victory, worlds, mechanisms, quality changes, abilities and portrait gestures. The old headless click failure is fixed by supplying viewport-local test coordinates. |
+| Headless touch/layout | **162 checks, zero failures.** Real screen events through Godot's input pipeline: GUI taps, dragging a settings slider, swiping level selection without activating a level, victory/collection/tutorial navigation, single selection, synthetic mouse rejection, canceled touches, single-finger orbit, pinch, backgrounding, camera controls, and state preservation across rotation. |
+| Rendered scene/touch | **34 scene checks and 168 touch/layout checks, zero failures.** Captures cover the main menu, full animated victory, all five worlds, settings, and six phone/tablet layouts. The final software-rendered suites completed without script errors. |
+| Windows game payload | **10 checks, zero failures.** Matching Linux Godot loads the Windows executable's embedded pack, version 1.1.0, models, menu, touch selection, three camera views, 66-relic final level and license notices. This is not native Windows execution. |
+| Android game payload | **10 checks, zero failures.** Matching Linux Godot loads the exported APK's extracted game assets and performs the same checks. This is not Android execution or lifecycle QA. |
 
-## Standalone downloads
+The layout matrix covers **600×1000, 600×1300, 1000×600, 1300×600, 800×1280 and 1280×800** logical viewports. Each checks all three camera views, visible touch targets, picking, selection after rotation, and preserved puzzle state. The desktop touch test temporarily enables Godot's touchscreen emulation so ScrollContainer exercises its native touch-scrolling path. Production desktop mouse-to-touch emulation stays disabled.
 
-`downloads/AstralForge-Windows.zip` contains the self-contained Windows executable and notices. `downloads/AstralForge-Android.apk` is the same verified Android application with stored assets ZIP-compressed, aligned again, and signed with the existing development key. Every application entry is checked byte-for-byte against the original APK. Godot's Android asset loader uses `AAsset_read`/`AAsset_seek`, which support compressed assets. APK signature schemes v2/v3 and alignment are verified again. This packaging change reduces the download size without removing application files; native device testing is still outstanding.
+Run `bash tools/test.sh`. With the repository's virtual display, run `DISPLAY=:99 LP_NUM_THREADS=4 ASTRAL_TEST_FIXED_FPS=5 bash tools/test.sh --render`. Both runners preserve command failures, require nonzero suite summaries and reject script errors. Fixed simulation timing supports software-rendered functional validation; it does not measure performance.
 
-Both files are hosted directly in the repository, and their SHA-256 checksums are in `downloads/SHA256SUMS.txt`. Reproduce them after a build with `python3 tools/prepare_downloads.py`.
+## Download and package verification
 
-## Platform and renderer limits
+The Windows target is a real x64 PE executable with an embedded game pack. Android is **org.astralforge.relicmatch**, version **1.1.0 / code 2**, arm64, minimum API 24, target API 36. Its manifest enables all screen-size classes, a resizable activity and full-user sensor orientation (13); the project requests sensor orientation and immersive fullscreen at runtime. There is no requested Internet permission.
 
-The cloud display uses **software OpenGL rendering**. It has no Vulkan ICD and reports a missing `VK_KHR_surface` extension when Vulkan is requested. Godot then falls back to OpenGL and gameplay works. Consequently, Forward+ SSAO/SSR/SSIL, volumetric fog, glow and depth of field have guarded implementations but still need visual validation on a Vulkan-capable device. No GPU or phone performance measurements are claimed.
+Godot templates are verified against the official SHA-512 manifest. Android SDK components are verified against Google's official repository checksums. TLS and artifact verification remain enabled.
 
-The APK's prebuilt Godot template leaves an unused `themed_icon` resource-table entry after copying the themed XML into the active `icon.xml`. `aapt2` reports that unused path as a warning. The active adaptive icon file and its foreground/background/monochrome resources are present; signing and package validation pass. This behavior was traced to the official 4.6.3 exporter, which deliberately skips `themed_icon.xml`. Native launcher/install testing remains part of Android QA.
+`tools/prepare_downloads.py` compresses Android assets, verifies every application entry against the exported APK, aligns the APK, signs it again and verifies APK signature schemes v2 and v3. The Windows ZIP and APK have SHA-256 checksums in `downloads/SHA256SUMS.txt`. Both direct downloads must stay below GitHub's regular-file size limit.
 
-No Windows machine, Android phone or emulator was attached. Native execution, installation, GPU-driver coverage, pause/resume lifecycle behavior, orientation on actual devices, sustained frame times, thermal/battery behavior and accessibility testing remain unverified. The 30/60 FPS modes are caps and design targets, not performance guarantees.
+The APK uses a **new development signing key** because the previous workspace's key was unavailable. Android cannot install it over the older differently signed preview. Uninstalling the old preview removes its local progress; retain that installation if preserving progress is essential. The new key is kept outside Git and must be preserved securely for future compatible updates. This is not store/release signing.
 
-## Production work still required
+## Remaining device validation
 
-- Playtest difficulty, coin balance and the full progression with human players. The solution certificates establish solvability, not an ideal difficulty curve.
-- Review the procedural art on target displays and complete any desired photorealistic art pass. The included art is functional, original 3D fantasy art; no AAA production-quality certification is claimed.
-- Profile representative low-end and high-end Android devices and Windows GPUs, then tune budgets and quality defaults using those measurements.
-- Supply a production Android signing identity and store configuration. The supplied APK uses development signing. Windows Authenticode signing is not configured.
-- Perform native release QA and choose distribution/store metadata before publishing.
+No Windows host, Android phone, tablet or emulator was attached. Native installation, actual cutouts/navigation bars, orientation sensors/rotation lock, background/resume, touch hardware, GPU-driver coverage and sustained performance remain unverified. Full-user orientation respects the device's auto-rotate setting. The 30/60 FPS options are caps, not certified performance results.
 
-The seven requested development areas have concrete implementations. Core gameplay, assets, animations, UI/progression and level validation are exercised. Optimization controls and export preparation are implemented; performance certification and native platform release QA remain open.
+Software OpenGL screenshots do not validate Vulkan-only Forward+ effects, battery use or thermal behavior. The original procedural fantasy art and its LOD assets are retained, with new colored relic accents, pulsing hints, astral markings and match ripples; this is not a replacement asset library.
 
-## Reproduction
-
-Run `bash tools/test.sh` for the isolated-save headless suites. With a display, use `DISPLAY=:99 bash tools/test.sh --render`. Regenerate/check art with the commands in `DEVELOPMENT.md`. Export with `bash tools/export.sh`; package deliverables with `python3 tools/package.py`.
-
-Local saves, signing keys, SDKs, engine binaries and cache directories are excluded from the editable source archive. Cloud installation/start instructions are saved in the environment draft; review/save and publication in environment settings are separate product actions. A newly published task has not been tested in this session.
+Godot's official 4.6.3 Android template retains an unused `themed_icon` resource-table reference after copying its XML to the active icon. `aapt2` warns about that unused entry; active icon assets are present. APK signing/ZIP integrity pass. Legacy `aapt dump badging` also rejects a boolean feature attribute; `aapt2` and the manifest XML dump provide the verified package metadata.

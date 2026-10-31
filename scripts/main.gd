@@ -24,12 +24,25 @@ var music: AudioStreamPlayer
 var pending_quality := false
 var reward: Dictionary = {}
 var sound_tick := 0
+const CAMERA_VIEWS := ["Perspective", "Overhead", "Inspect"]
+const VIEW_PITCH := [0.94, 1.42, 0.68]
+var camera_view := 0
+var pitch := 0.94
+var target_pitch := 0.94
+var touch_ui: Dictionary = {}
+var touch_tile := -1
+var board_bounds := AABB()
+var fitting_distance := 18.0
+var fit_dirty := true
+var input_epoch := 0
+var touch_epoch := 0
 
 func _ready() -> void:
 	if "--low" in OS.get_cmdline_user_args(): Progress.data.settings.quality = 0
 	if OS.has_feature("mobile"):
-		get_window().content_scale_size = Vector2i(600,1000)
-		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_PORTRAIT)
+		get_window().mode = Window.MODE_FULLSCREEN
+		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR)
+		resize_mobile_view()
 	build_audio()
 	camera = Camera3D.new()
 	camera.fov = 42
@@ -46,7 +59,7 @@ func _ready() -> void:
 	ui.action.connect(on_action)
 	load_expedition(LevelCatalog.generate(1),false)
 	apply_settings()
-	get_viewport().size_changed.connect(func(): call_deferred("layout_tray"))
+	get_window().size_changed.connect(on_resize)
 	ui.menu()
 
 func build_audio() -> void:
@@ -81,6 +94,7 @@ func _exit_tree() -> void:
 		player.stream = null
 
 func load_expedition(data: Dictionary, active := true) -> void:
+	cancel_touches()
 	level = data
 	state.load_level(level)
 	Progress.session_abilities = 0
@@ -90,6 +104,9 @@ func load_expedition(data: Dictionary, active := true) -> void:
 	zoom = 1.0
 	target_zoom = 1.0
 	target_yaw = 0.12
+	camera_view = 0
+	target_pitch = VIEW_PITCH[0]
+	fit_dirty = true
 	if is_instance_valid(world):
 		remove_child(world)
 		world.queue_free()
@@ -122,6 +139,7 @@ func rebuild_tiles() -> void:
 		tile.setup(data.id,Progress.data.settings.quality < 2)
 		tiles[data.id] = tile
 	sync_tiles()
+	update_bounds()
 
 func sync_tiles() -> void:
 	for data in state.tiles:
@@ -143,20 +161,21 @@ func sync_tiles() -> void:
 	ui.update_stats()
 
 func tray_spacing() -> float:
-	return minf(87.0,(get_viewport().get_visible_rect().size.x-38.0)/state.capacity)
+	return minf(87.0,(ui.dimensions().x-38.0)/state.capacity)
 
 func tray_position(index: int) -> Vector3:
-	var s := get_viewport().get_visible_rect().size
-	return camera.project_position(Vector2(s.x*0.5+(index-(state.capacity-1)*0.5)*tray_spacing(),s.y*0.854),8.0)
+	var center := ui.tray_center()
+	return camera.project_position(center + Vector2((index-(state.capacity-1)*0.5)*tray_spacing(),0),8.0)
 
 func tray_scale() -> float:
-	var s := get_viewport().get_visible_rect().size
-	return camera.project_position(Vector2(s.x/2+tray_spacing()*0.42,s.y*0.854),8).distance_to(camera.project_position(Vector2(s.x/2-tray_spacing()*0.42,s.y*0.854),8))/BoardState.WIDTH
+	var center := ui.tray_center()
+	return camera.project_position(center+Vector2(tray_spacing()*0.42,0),8).distance_to(camera.project_position(center-Vector2(tray_spacing()*0.42,0),8))/BoardState.WIDTH
 
 func tray_rotation() -> Vector3:
 	return Vector3(0,camera.rotation.y,0)
 
 func layout_tray() -> void:
+	fit_dirty = true
 	if not is_instance_valid(camera) or not is_instance_valid(tray_root): return
 	for child in tray_root.get_children():
 		tray_root.remove_child(child)
@@ -184,18 +203,135 @@ func update_tray_positions() -> void:
 		tile.scale = Vector3.ONE*tray_scale()
 		tile.rotation = tray_rotation()
 
-func update_camera(delta: float, immediate := false) -> void:
-	var s := get_viewport().get_visible_rect().size
-	var portrait := s.x/s.y < 0.9
-	var blend := 1.0 if immediate else 1.0-exp(-delta*7)
-	yaw = lerpf(yaw,target_yaw,blend)
-	zoom = lerpf(zoom,target_zoom,blend)
-	var distance := (22.5 if portrait else 17.2) * zoom + 0.18 * float(level.tiles.size()/12)
-	var target := Vector3(0,0.45,0) if playing or portrait else Vector3(-3.5,0.45,0)
-	if playing: target.z += 0.70
-	var direction := Vector3(sin(yaw)*0.52,0.80,cos(yaw)*0.59).normalized() if playing else Vector3(sin(yaw)*0.52,0.64,cos(yaw)*0.77).normalized()
-	camera.position = camera.position.lerp(target+direction*distance,blend)
+func resize_mobile_view() -> void:
+	if not OS.has_feature("mobile"): return
+	var physical := Vector2(get_window().size)
+	if physical.x <= 0 or physical.y <= 0: return
+	var logical := Vector2i((physical * (600.0 / minf(physical.x,physical.y))).round())
+	if get_window().content_scale_size != logical: get_window().content_scale_size = logical
+
+func on_resize() -> void:
+	cancel_touches()
+	resize_mobile_view()
+	fit_dirty = true
+	call_deferred("layout_tray")
+
+func cancel_touches() -> void:
+	touch_points.clear()
+	touch_ui.clear()
+	multi_gesture = false
+	touch_moved = false
+	touch_tile = -1
+	input_epoch += 1
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
+		cancel_touches()
+		if is_instance_valid(ui) and playing and not ui.panel_open: ui.pause()
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST and is_instance_valid(ui):
+		if ui.panel_open: on_action("close")
+		elif playing: on_action("pause")
+
+func update_bounds() -> void:
+	var first := true
+	for tile in state.tiles:
+		# Include mechanisms' current position; collecting never reframes the board.
+		var p := state.position_of(tile)
+		var box := AABB(p-Vector3(0.65,0.15,0.7),Vector3(1.3,1.5,1.4))
+		board_bounds = box if first else board_bounds.merge(box)
+		first = false
+	fit_dirty = true
+
+func pose_camera(distance: float, angle: float, elevation: float) -> void:
+	var target := board_bounds.get_center()
+	var direction := Vector3(sin(angle)*cos(elevation),sin(elevation),cos(angle)*cos(elevation))
+	camera.position = target + direction*distance
 	camera.look_at(target,Vector3.UP)
+	if is_instance_valid(ui) and playing:
+		var center := get_viewport().get_visible_rect().size * 0.5
+		var desired := ui.board_rect().get_center()
+		# Translate the camera plane to frame the board above the tray and below HUD.
+		camera.position += camera.project_position(center,distance)-camera.project_position(desired,distance)
+
+func fit_camera() -> void:
+	fitting_distance = 10.0
+	var area := ui.board_rect().grow(-8)
+	for attempt in range(24):
+		pose_camera(fitting_distance,target_yaw,target_pitch)
+		var fits := true
+		for i in range(8):
+			if not area.has_point(camera.unproject_position(board_bounds.get_endpoint(i))): fits = false
+		if fits: break
+		fitting_distance *= 1.10
+	fit_dirty = false
+
+func update_camera(delta: float, immediate := false) -> void:
+	if not is_instance_valid(ui): return
+	if fit_dirty: fit_camera()
+	var blend := 1.0 if immediate else 1.0-exp(-delta*9)
+	yaw = lerp_angle(yaw,target_yaw,blend)
+	pitch = lerpf(pitch,target_pitch,blend)
+	zoom = lerpf(zoom,target_zoom,blend)
+	pose_camera(fitting_distance * zoom,yaw,pitch)
+	if is_instance_valid(ui.camera_label): ui.camera_label.text = CAMERA_VIEWS[camera_view] + " · %d%%" % int(100/target_zoom)
+
+func camera_action(command: String) -> void:
+	match command:
+		"camera_view":
+			camera_view = (camera_view+1)%CAMERA_VIEWS.size()
+			target_pitch = VIEW_PITCH[camera_view]
+			target_zoom = 1.0
+			ui.toast(CAMERA_VIEWS[camera_view] + " view",1.5)
+		"camera_reset":
+			camera_view = 0
+			target_pitch = VIEW_PITCH[0]
+			target_yaw = 0.12
+			target_zoom = 1.0
+		"zoom_in": target_zoom = clampf(target_zoom-0.12,0.65,1.55)
+		"zoom_out": target_zoom = clampf(target_zoom+0.12,0.65,1.55)
+	fit_dirty = true
+
+func _input(event: InputEvent) -> void:
+	# Track raw touch lifetimes before GUI dispatch so releases/cancellation over
+	# controls cannot leave a stuck gesture. Emulated mouse belongs to the GUI only.
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			touch_points[event.index] = event.position
+			touch_ui[event.index] = ui.blocks_point(event.position) or busy or not playing
+			if touch_points.size() == 1:
+				touch_origin = event.position
+				touch_moved = false
+				touch_epoch = input_epoch
+				touch_tile = -1 if touch_ui[event.index] else pick(event.position)
+			else: multi_gesture = true
+		else:
+			var owned: bool = touch_points.has(event.index) and not touch_ui.get(event.index,true)
+			var tap: bool = owned and not event.canceled and not multi_gesture and not touch_moved and touch_epoch == input_epoch
+			tap = tap and not busy and playing and not ui.blocks_point(event.position) and event.position.distance_to(touch_origin) < 16
+			var id := pick(event.position) if tap else -1
+			touch_points.erase(event.index)
+			touch_ui.erase(event.index)
+			if tap and id >= 0 and id == touch_tile: collect(id)
+			if touch_points.is_empty(): cancel_touches()
+	elif event is InputEventScreenDrag and touch_points.has(event.index):
+		var old: Vector2 = touch_points[event.index]
+		if event.position.distance_to(touch_origin) >= 16: touch_moved = true
+		var board_gesture: bool = not ui.panel_open and playing and not busy
+		for on_ui in touch_ui.values(): board_gesture = board_gesture and not on_ui
+		if board_gesture and touch_points.size() == 2:
+			var ids := touch_points.keys()
+			var old_delta: Vector2 = touch_points[ids[1]]-touch_points[ids[0]]
+			touch_points[event.index] = event.position
+			var new_delta: Vector2 = touch_points[ids[1]]-touch_points[ids[0]]
+			if new_delta.length() > 20 and old_delta.length() > 20:
+				target_zoom = clampf(target_zoom*old_delta.length()/new_delta.length(),0.65,1.55)
+				target_yaw -= old_delta.angle_to(new_delta)
+				fit_dirty = true
+		elif board_gesture and touch_moved and not multi_gesture:
+			target_yaw -= (event.position.x-old.x)*0.006
+			target_pitch = clampf(target_pitch+(event.position.y-old.y)*0.004,0.55,1.48)
+			fit_dirty = true
+		touch_points[event.index] = event.position
 
 func _process(delta: float) -> void:
 	if level == null: return
@@ -210,23 +346,28 @@ func pick(screen_pos: Vector2) -> int:
 	return int(hit.collider.get_meta("tile_id",-1)) if not hit.is_empty() else -1
 
 func _unhandled_input(event: InputEvent) -> void:
+	if (event is InputEventMouseButton or event is InputEventMouseMotion) and event.device == InputEvent.DEVICE_ID_EMULATION: return
+	if event is InputEventMouse and ui.blocks_point(event.position): return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_F11: on_action("fullscreen")
 		if event.keycode == KEY_ESCAPE:
 			if ui.panel_open: on_action("resume")
 			elif playing: on_action("pause")
 		if playing and not ui.panel_open:
-			var keys := {KEY_U:"undo",KEY_R:"shuffle",KEY_H:"hint",KEY_E:"slot",KEY_SPACE:"rotate",KEY_F:"shift"}
+			var keys := {KEY_U:"undo",KEY_R:"shuffle",KEY_H:"hint",KEY_E:"slot",KEY_SPACE:"rotate",KEY_F:"shift",KEY_V:"camera_view",KEY_C:"camera_reset",KEY_EQUAL:"zoom_in",KEY_MINUS:"zoom_out"}
 			if keys.has(event.keycode): on_action(keys[event.keycode])
 	if not playing or ui.panel_open or busy or state.status != "playing": return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			var id := pick(event.position)
 			if id >= 0: collect(id)
-		elif event.button_index == MOUSE_BUTTON_WHEEL_UP: target_zoom = maxf(0.82,target_zoom-0.04)
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN: target_zoom = minf(1.18,target_zoom+0.04)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_UP: camera_action("zoom_in")
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN: camera_action("zoom_out")
 	if event is InputEventMouseMotion:
-		if event.button_mask & MOUSE_BUTTON_MASK_RIGHT: target_yaw = clampf(target_yaw-event.relative.x*0.004,-0.37,0.45)
+		if event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
+			target_yaw -= event.relative.x*0.004
+			target_pitch = clampf(target_pitch+event.relative.y*0.003,0.55,1.48)
+			fit_dirty = true
 		var id := pick(event.position)
 		if id != hovered:
 			if tiles.has(hovered): tiles[hovered].highlight(false)
@@ -234,30 +375,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			if id >= 0 and state.blocked_reason(id).is_empty(): tiles[id].highlight(true)
 			if is_instance_valid(ui.hover_label):
 				ui.hover_label.text = "" if id < 0 else (BoardState.NAMES[state.tiles[id].kind] if state.uncovered(id) else "Covered relic")
-	if event is InputEventScreenTouch:
-		if event.pressed:
-			touch_points[event.index] = event.position
-			if touch_points.size() == 1:
-				touch_origin = event.position
-				touch_moved = false
-			if touch_points.size() > 1: multi_gesture = true
-		else:
-			if touch_points.has(event.index) and not multi_gesture and not touch_moved and event.position.distance_to(touch_origin) < 12:
-				var id := pick(event.position)
-				if id >= 0: collect(id)
-			touch_points.erase(event.index)
-			if touch_points.is_empty(): multi_gesture = false
-	if event is InputEventScreenDrag and touch_points.has(event.index):
-		if event.position.distance_to(touch_origin) > 12: touch_moved = true
-		if touch_points.size() == 2:
-			var ids := touch_points.keys()
-			var old_delta: Vector2 = touch_points[ids[1]]-touch_points[ids[0]]
-			touch_points[event.index] = event.position
-			var new_delta: Vector2 = touch_points[ids[1]]-touch_points[ids[0]]
-			if new_delta.length() > 12 and old_delta.length() > 12:
-				target_zoom = clampf(target_zoom*old_delta.length()/new_delta.length(),0.82,1.18)
-				target_yaw = clampf(target_yaw-old_delta.angle_to(new_delta),-0.37,0.45)
-		else: touch_points[event.index] = event.position
 
 func collect(id: int) -> void:
 	if busy or not playing: return
@@ -287,6 +404,7 @@ func collect(id: int) -> void:
 	await tween.finished
 	if not result.matched.is_empty():
 		sound("match")
+		ui.match_feedback(state.matches)
 		var disappear := create_tween().set_parallel(true)
 		for tid in result.matched:
 			burst(tiles[tid].position)
@@ -303,6 +421,26 @@ func collect(id: int) -> void:
 	elif state.status == "lost": ui.result(false)
 
 func burst(pos: Vector3) -> void:
+	# Expanding light ring also renders on the mobile Compatibility backend.
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.32
+	torus.outer_radius = 0.36
+	torus.rings = 32
+	torus.ring_segments = 6
+	ring.mesh = torus
+	ring.position = pos
+	var glow := StandardMaterial3D.new()
+	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glow.albedo_color = Color("9deddf")
+	ring.material_override = glow
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(ring)
+	var ripple := create_tween().set_parallel(true)
+	ripple.tween_property(ring,"scale",Vector3.ONE*3.5,0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	ripple.tween_property(glow,"albedo_color:a",0.0,0.55)
+	ripple.chain().tween_callback(ring.queue_free)
 	var p := GPUParticles3D.new()
 	p.position = pos
 	p.one_shot = true
@@ -332,7 +470,11 @@ func burst(pos: Vector3) -> void:
 	get_tree().create_timer(1.2).timeout.connect(p.queue_free)
 
 func on_action(command: String) -> void:
-	if busy: return
+	if command in ["camera_view","camera_reset","zoom_in","zoom_out"]:
+		camera_action(command)
+		return
+	if busy and command not in ["pause","resume","close"]: return
+	cancel_touches()
 	sound("select")
 	if command.begins_with("licenses:"):
 		ui.licenses(command.split(":")[1])
@@ -477,6 +619,7 @@ func animate_mechanisms() -> void:
 	await tw.finished
 	busy = false
 	sync_tiles()
+	update_bounds()
 
 func rail_motion(node: Node3D, target: Vector3, tween: Tween) -> void:
 	# Lower before sliding underneath the bridge; slide home before raising.

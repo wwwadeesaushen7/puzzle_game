@@ -8,6 +8,7 @@ var armillary: Node3D
 var rotor: Node3D
 var carriage: Node3D
 var world_id := 0
+var astral_rings: Node3D
 const SKY_COLORS := [Color("0b1d34"), Color("0d2936"), Color("435368"), Color("67827a"), Color("526e91")]
 
 func material(color: Color, metallic := 0.0, rough := 0.5) -> StandardMaterial3D:
@@ -139,9 +140,33 @@ func build(which: int, quality: int) -> void:
 			cloud.position = Vector3(cos(a)*(12+i%4*3),-4.0-float(i%3),sin(a)*(12+i%4*3))
 			cloud.scale = Vector3(9,2.8,7)
 			detail_root.add_child(cloud)
+	make_astral_rings(which)
 	make_environment(which)
 	make_particles(quality)
 	apply_quality(quality)
+
+func make_astral_rings(which: int) -> void:
+	astral_rings = Node3D.new()
+	astral_rings.position.y = -0.24
+	add_child(astral_rings)
+	var colors := [Color("65cbbd"),Color("8dcfeb"),Color("eac47b"),Color("a9d491"),Color("c5b9f5")]
+	var ink := material(colors[which],0.25,0.4)
+	ink.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for radius in [4.9,5.12]:
+		var ring := MeshInstance3D.new()
+		var mesh := TorusMesh.new()
+		mesh.inner_radius = radius
+		mesh.outer_radius = radius+0.018
+		mesh.rings = 96
+		mesh.ring_segments = 4
+		ring.mesh = mesh
+		ring.material_override = ink
+		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		astral_rings.add_child(ring)
+	for i in range(36):
+		var a := TAU*i/36.0
+		var marker := block(astral_rings,Vector3(sin(a)*5.01,0,cos(a)*5.01),Vector3(0.025,0.015,0.15 if i%3 == 0 else 0.07),ink)
+		marker.rotation.y = a
 
 func make_environment(which: int) -> void:
 	env_node = WorldEnvironment.new()
@@ -241,6 +266,7 @@ func apply_quality(preset: int) -> void:
 	sunlight.shadow_enabled = preset > 0
 	sunlight.light_angular_distance = 0.4 if forward and preset >= 2 else 0.0
 	detail_root.visible = preset > 0
+	astral_rings.visible = preset > 0
 	dust.emitting = preset > 0
 	get_viewport().msaa_3d = Viewport.MSAA_4X if preset >= 2 else Viewport.MSAA_DISABLED
 	get_viewport().mesh_lod_threshold = 2.0 if preset < 2 else 1.0

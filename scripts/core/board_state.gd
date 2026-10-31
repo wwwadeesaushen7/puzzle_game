@@ -126,7 +126,7 @@ func select_tile(id: int, record := true) -> Dictionary:
 	# Resolve matches BEFORE evaluating the seven-slot loss condition.
 	if remaining() == 0 and tray.is_empty(): status = "won"
 	elif tray.size() >= capacity: status = "lost"
-	return {"ok": true, "matched": triple, "status": status}
+	return {"ok": true, "matched": triple if triple.size() == 3 else [], "status": status}
 
 func undo() -> bool:
 	if history.is_empty(): return false

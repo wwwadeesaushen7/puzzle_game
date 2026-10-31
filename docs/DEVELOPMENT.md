@@ -7,7 +7,7 @@ Use the existing checkout. A Codex cloud task is already isolated; do not create
 Cloud paths:
 
 ```sh
-cd /workspace/puzzle_game
+cd /workspace/astral-forge  # or your existing checkout directory
 export XDG_CONFIG_HOME=/workspace/.config
 export XDG_DATA_HOME=/workspace/.godot-user
 export XDG_CACHE_HOME=/workspace/.cache
@@ -60,7 +60,7 @@ godot --headless --path . --export-debug Android builds/android/AstralForge-debu
 /workspace/toolchain/android-sdk/build-tools/36.0.0/apksigner verify --verbose builds/android/AstralForge-debug.apk
 ```
 
-The APK is arm64, portrait and offline. A production store release needs your release keystore, final application ID/versioning, store metadata and device QA. Neither a store upload nor a release signing identity is included.
+The APK is arm64, fullscreen, sensor-oriented and offline. It supports portrait and landscape on phones and tablets. A production store release needs your release keystore, final application ID/versioning, store metadata and device QA. Neither a store upload nor a release signing identity is included.
 
 ## Windows
 
@@ -82,3 +82,11 @@ The executable embeds its game pack. Launch it normally for Compatibility render
 Android defaults to Medium, 85% 3D render scale and 30 FPS. Desktop defaults to High, full render scale and 60 FPS. Both can be changed. Godot handles frustum culling and imported mesh LOD; floor tiles use MultiMesh instancing. Colliders are simple boxes, with no rigid-body simulation. There are two directional lights (one shadow caster) and two unshadowed accent lights. Baked lighting is not used in these procedural world scenes.
 
 30 FPS on lower-end supported phones and optional 60 FPS are targets, not measurements. Native-device thermal, memory, frame-time and battery testing remains necessary. Hints run a bounded solution search on a worker thread; if no continuation is proven within the budget, no coins are spent.
+
+## Touch and responsive layout regression checks
+
+`bash tools/test.sh` runs rule, save, scene and touch suites. The touch suite routes raw screen events through Godot's input system to exercise synthesized GUI clicks as well as the board's raw-touch handling. It verifies phone/tablet sizes from 600×1000 to 1280×800, including tall portrait and compact landscape, modal preservation, camera framing, and picking after rotation.
+
+For software rendering, start `Xorg :99 -config "$PWD/tools/virtual_display.conf" -logfile /tmp/astral-Xorg.log -nolisten tcp -noreset`, then run `DISPLAY=:99 LP_NUM_THREADS=4 ASTRAL_TEST_FIXED_FPS=5 bash tools/test.sh --render`. Fixed simulation timing keeps software validation practical; it does not measure frame rate. Existing scene tests now pass viewport-local coordinates explicitly to `push_input`, including with Godot's small dummy headless window.
+
+The v1.1.0 development signing key lives outside Git at `/workspace/toolchain/keys/debug.keystore`. Preserve it securely to keep future development APKs upgrade-compatible. The prior workspace's key was absent; v1.1.0 cannot replace the previous differently signed installation in place. Do not commit keystores or change signing identities silently.

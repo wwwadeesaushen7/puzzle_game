@@ -17,7 +17,8 @@ Forward+ on a suitable Vulkan-capable GPU; Godot may fall back on older hardware
 
 Click an uncovered relic. Three identical relics clear the collection.
 Clear the board to win; filling seven slots without a match ends the expedition.
-Mouse wheel: zoom. Right drag: orbit. Esc: pause. F11: fullscreen.
+Mouse wheel or +/-: zoom. Right drag: orbit. V: camera view; C: reset.
+Esc: pause. F11: fullscreen. View/zoom/reset buttons are also on the HUD.
 U: Undo; R: Reweave; H: Hint; E: extra slot; Space: rotate; F: shift.
 Abilities use earned coins; restarting is free and every level is solvable
 without abilities. Saves are local to your user account.

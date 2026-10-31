@@ -54,10 +54,10 @@ func run() -> void:
 	click.position = screen_pos
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
-	root.push_input(click)
+	root.push_input(click, true)
 	click = click.duplicate()
 	click.pressed = false
-	root.push_input(click)
+	root.push_input(click, true)
 	await frames(2)
 	while app.busy: await process_frame
 	expect(app.state.tray.size() == 1,"Animated selection moves a relic into the tray")
@@ -116,11 +116,11 @@ func run() -> void:
 	for index in range(2):
 		var e := InputEventScreenTouch.new()
 		e.index = index; e.pressed = true; e.position = Vector2(200+index*100,400)
-		app._unhandled_input(e)
+		root.push_input(e, true)
 	for index in range(2):
 		var e := InputEventScreenTouch.new()
 		e.index = index; e.pressed = false; e.position = Vector2(200+index*100,400)
-		app._unhandled_input(e)
+		root.push_input(e, true)
 	expect(app.state.remaining() == before and app.state.tray.is_empty(),"Two-finger camera gesture does not select")
 	app.on_action("menu")
 	await frames(8)
